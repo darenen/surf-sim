@@ -98,11 +98,6 @@ public class WaterPhysics : MonoBehaviour
         if (heightError <= 0f)
             return;
 
-        Debug.DrawLine(
-        rayOrigin,
-        rayOrigin + Vector3.down * raycastDistance,
-        Color.yellow
-        );
 
         float submergence = Mathf.Clamp01(heightError / Mathf.Max(0.001f, floatHeight));
 
@@ -118,7 +113,16 @@ public class WaterPhysics : MonoBehaviour
 
         Vector3 pointVel = rb.GetPointVelocity(point.position);
 
-        Vector3 liftDirection = Vector3.Slerp(Vector3.up, waterNormal, normalLiftInfluence).normalized;
+
+        Vector3 flatWaveDir = Vector3.right;
+        float speedWithWave = Vector3.Dot(rb.linearVelocity, flatWaveDir);
+        float catchFactor = Mathf.Clamp01(speedWithWave / 5f);
+
+        float effectiveNormalLift = normalLiftInfluence * catchFactor;
+
+        Vector3 liftDirection = Vector3.Slerp(Vector3.up, waterNormal, effectiveNormalLift).normalized;
+
+
         Vector3 buoyancy = liftDirection * (buoyancyStrength * submergence);
 
         Vector3 verticalDamp = Vector3.up * (-pointVel.y * verticalDamping * submergence);
