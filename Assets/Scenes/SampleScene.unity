@@ -766,7 +766,7 @@ GameObject:
   - component: {fileID: 1206339751}
   - component: {fileID: 1206339750}
   m_Layer: 4
-  m_Name: Plane (2)
+  m_Name: Oceanlevel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -898,16 +898,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41f82ac79622246fc90beea06f35fe5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  waveMoving: 0
-  waveTravelSpeed: 5
-  resolution: 50
-  size: 20
+  resolutionX: 100
+  resolutionZ: 50
+  length: 40
+  width: 24
   waveHeight: 3
-  waveWidth: 0.15
-  wavePosition: 0
+  waveWidth: 0.12
+  waveCenterLocalX: 0
   noiseScale: 0.3
   noiseStrength: 0.4
-  waterFlowSpeed: 2
+  moveWave: 1
+  moveDirection: {x: 1, y: 0, z: 1}
+  moveSpeed: 1.5
+  startX: -75
+  resetX: 75
+  makeColliderTrigger: 1
 --- !u!64 &1259361255
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -995,13 +1000,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1259361253}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0, y: -0.1, z: -94.5}
-  m_LocalScale: {x: 1, y: 1, z: 5}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -75, y: -0.2, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 7.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1379296428
 GameObject:
   m_ObjectHideFlags: 0
@@ -1015,7 +1020,7 @@ GameObject:
   - component: {fileID: 1379296430}
   - component: {fileID: 1379296429}
   m_Layer: 0
-  m_Name: Plane
+  m_Name: Seafloor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1112,8 +1117,7 @@ Transform:
   m_LocalPosition: {x: 0, y: -10, z: 0}
   m_LocalScale: {x: 15, y: 15, z: 15}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1407838224}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1407838220
@@ -1227,8 +1231,8 @@ Transform:
   m_GameObject: {fileID: 1407838220}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.74804026, z: -0, w: 0.6636534}
-  m_LocalPosition: {x: 0.107333325, y: 0.72, z: 0.8953333}
-  m_LocalScale: {x: 0.19999999, y: 0.0019999999, z: 0.06666666}
+  m_LocalPosition: {x: 1.61, y: 0.8000002, z: 13.43}
+  m_LocalScale: {x: 3, y: 0.029999997, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1814268451}
@@ -1238,7 +1242,7 @@ Transform:
   - {fileID: 288994749}
   - {fileID: 962911135}
   - {fileID: 2010654403}
-  m_Father: {fileID: 1379296432}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 96.842, z: 0}
 --- !u!114 &1407838225
 MonoBehaviour:
@@ -1301,22 +1305,33 @@ MonoBehaviour:
   - {fileID: 288994749}
   - {fileID: 2010654403}
   - {fileID: 962911135}
-  buoyancyStrength: 15
-  floatHeight: 5.3
-  verticalDamping: 2
+  buoyancyStrength: 50
+  floatHeight: 5.4
+  normalLiftInfluence: 0.25
+  verticalDamping: 30
   finGrip: 0.5
   finGripDeadzone: 0.01
-  linearDrag: 0.8
-  angularDragPitch: 3
+  forwardDrag: 10
+  sidewaysDrag: 5
+  verticalWaterDrag: 0.3
+  railBiteStrength: 0.45
+  railCarvePivotOffset: 1.2
+  speedForFullRailBite: 8
+  invertRailCarve: 0
   angularDragRoll: 2
   angularDragYaw: 0.5
+  angularDragPitch: 3
   maxVelocity: 15
+  maxAngularVelocity: 12
   waterLayer:
     serializedVersion: 2
     m_Bits: 16
+  raycastStartHeight: 5
+  raycastDistance: 20
   currentSpeed: 0
   sidewaysSlip: 0
   pointsInWater: 0
+  railAmount: 0
 --- !u!43 &1697384146
 Mesh:
   m_ObjectHideFlags: 0
@@ -2269,3 +2284,4 @@ SceneRoots:
   - {fileID: 1206339753}
   - {fileID: 330585546}
   - {fileID: 1259361258}
+  - {fileID: 1407838224}

@@ -3,137 +3,136 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
 public class ProceduralWaveMesh : MonoBehaviour
 {
-    [Header("Wave Moving")]
-    public bool waveMoving = false;
-    public float waveTravelSpeed = 5f;
-
     [Header("Grid Dimensions")]
-    public int resolution = 50; // High density for the AI to "feel" the slope
-    public float size = 20f;     // Total size of the water patch
+    public int resolutionX = 100;
+    public int resolutionZ = 50;
+    public float length = 40f;
+    public float width = 24f;
 
-    [Header("Single Wave Shape")]
-    public float waveHeight = 3f;
-    public float waveWidth = 0.15f; // Lower number = fatter wave. Higher number = steeper/narrower.
-    public float wavePosition = 0f; // Moves the wave left or right on the X-axis
+    [Header("Wave Shape")]
+    public float waveHeight = 2.5f;
+    public float waveWidth = 0.12f;
+    public float waveCenterLocalX = 0f;
 
-    [Header("Randomization (The Chop)")]
-    public float noiseScale = 0.3f;
-    public float noiseStrength = 0.4f;
-    public float waterFlowSpeed = 2f; // How fast the water rushes over the wave
+    [Header("Chop")]
+    public float noiseScale = 0.25f;
+    public float noiseStrength = 0.15f;
 
-    private Mesh mesh;
-    private MeshCollider meshCollider;
-    private Vector3[] baseVertices;
-    private Vector3[] workingVertices;
-    private int[] triangles;
+    [Header("Movement")]
+    public bool moveWave = true;
+    public Vector3 moveDirection = Vector3.right;
+    public float moveSpeed = 1.5f;
+    public float startX = -20f;
+    public float resetX = 20f;
+
+    [Header("Collider")]
+    public bool makeColliderTrigger = true;
+
+    Mesh mesh;
+    MeshCollider meshCollider;
+
+    Vector3[] vertices;
+    int[] triangles;
 
     void Start()
     {
         meshCollider = GetComponent<MeshCollider>();
-        GenerateGrid();
-    }
+        meshCollider.isTrigger = makeColliderTrigger;
 
-    // This builds the "Fabric" of the mesh
-    void GenerateGrid()
-    {
-        mesh = new Mesh();
-        mesh.name = "ProceduralWave";
-        GetComponent<MeshFilter>().mesh = mesh;
-
-        // Create vertex positions (Flat initially)
-        baseVertices = new Vector3[(resolution + 1) * (resolution + 1)];
-        workingVertices = new Vector3[baseVertices.Length];
-
-        int i = 0;
-        for (int z = 0; z <= resolution; z++)
-        {
-            for (int x = 0; x <= resolution; x++)
-            {
-                // We center the mesh so (0,0,0) is in the middle of the grid
-                float xPos = (x * (size / resolution)) - (size / 2f);
-                float zPos = (z * (size / resolution)) - (size / 2f);
-                baseVertices[i] = new Vector3(xPos, 0, zPos);
-                i++;
-            }
-        }
-
-        // Stitch the vertices into triangles
-        triangles = new int[resolution * resolution * 6];
-        int vert = 0;
-        int tris = 0;
-        for (int z = 0; z < resolution; z++)
-        {
-            for (int x = 0; x < resolution; x++)
-            {
-                triangles[tris + 0] = vert + 0;
-                triangles[tris + 1] = vert + resolution + 1;
-                triangles[tris + 2] = vert + 1;
-                triangles[tris + 3] = vert + 1;
-                triangles[tris + 4] = vert + resolution + 1;
-                triangles[tris + 5] = vert + resolution + 2;
-
-                vert++;
-                tris += 6;
-            }
-            vert++;
-        }
-
-        mesh.vertices = baseVertices;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
-
-        // Initial collider setup
-        meshCollider.sharedMesh = mesh;
+        GenerateWaveMesh();
     }
 
     void FixedUpdate()
     {
-        AnimateWave();
+        if (!moveWave)
+            return;
+
+        Vector3 dir = moveDirection.sqrMagnitude > 0.001f ? moveDirection.normalized : Vector3.right;
+        transform.position += dir * moveSpeed * Time.fixedDeltaTime;
+
+        if (dir.x > 0f && transform.position.x > resetX)
+        {
+            transform.position = new Vector3(startX, transform.position.y, transform.position.z);
+        }
+        else if (dir.x < 0f && transform.position.x < startX)
+        {
+            transform.position = new Vector3(resetX, transform.position.y, transform.position.z);
+        }
     }
 
-    // This moves the points every frame
-    void AnimateWave()
+    void GenerateWaveMesh()
     {
-        for (int i = 0; i < baseVertices.Length; i++)
+        mesh = new Mesh();
+        mesh.name = "MovingProceduralWave";
+        mesh.MarkDynamic();
+
+        GetComponent<MeshFilter>().mesh = mesh;
+
+        vertices = new Vector3[(resolutionX + 1) * (resolutionZ + 1)];
+        triangles = new int[resolutionX * resolutionZ * 6];
+
+        int i = 0;
+
+        for (int z = 0; z <= resolutionZ; z++)
         {
-            Vector3 v = baseVertices[i];
-
-            // 1. The Single Wave (Gaussian Bell Curve)
-            // We calculate how far this point is from the center of the wave
-            float distance = v.x - wavePosition;
-
-            if (waveMoving)
+            for (int x = 0; x <= resolutionX; x++)
             {
-                // Calculate a moving position that loops from one edge of the mesh to the other
-                float currentPosition = Mathf.Repeat(Time.time * waveTravelSpeed, size) - (size / 2f);
+                float x01 = x / (float)resolutionX;
+                float z01 = z / (float)resolutionZ;
 
-                // Calculate distance based on this moving position
-                distance = v.x - currentPosition;
+                float localX = x01 * length - length * 0.5f;
+                float localZ = z01 * width - width * 0.5f;
+
+                float height = GetLocalWaveHeight(localX, localZ);
+
+                vertices[i] = new Vector3(localX, height, localZ);
+                i++;
             }
-
-            // This math creates one single peak that flattens out on the sides
-            float swell = waveHeight * Mathf.Exp(-Mathf.Pow(distance, 2) * waveWidth);
-
-            // 2. The Flowing Water (Perlin Noise)
-            // We animate the noise using Time.time so the water looks like it's
-            // rushing up and over the stationary wave.
-            float chop = Mathf.PerlinNoise(v.x * noiseScale + (Time.time * waterFlowSpeed),
-                                           v.z * noiseScale) * noiseStrength;
-
-            // 3. Set the new height
-            workingVertices[i] = new Vector3(v.x, swell + chop, v.z);
         }
 
-        // Push the new point positions to the mesh
-        mesh.vertices = workingVertices;
+        int vert = 0;
+        int tris = 0;
 
-        // NEW: Tell the mesh to recalculate which way the slopes are facing!
+        for (int z = 0; z < resolutionZ; z++)
+        {
+            for (int x = 0; x < resolutionX; x++)
+            {
+                triangles[tris + 0] = vert + 0;
+                triangles[tris + 1] = vert + resolutionX + 1;
+                triangles[tris + 2] = vert + 1;
+
+                triangles[tris + 3] = vert + 1;
+                triangles[tris + 4] = vert + resolutionX + 1;
+                triangles[tris + 5] = vert + resolutionX + 2;
+
+                vert++;
+                tris += 6;
+            }
+
+            vert++;
+        }
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
         mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
 
-        // Kick the collider to update the physics
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = mesh;
     }
 
+    float GetLocalWaveHeight(float localX, float localZ)
+    {
+        float distance = localX - waveCenterLocalX;
+        float swell = waveHeight * Mathf.Exp(-(distance * distance) * waveWidth);
 
+        float noise = Mathf.PerlinNoise(
+            localX * noiseScale,
+            localZ * noiseScale
+        );
+
+        float chop = (noise - 0.5f) * noiseStrength;
+
+        return swell + chop;
+    }
 }

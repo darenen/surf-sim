@@ -90,7 +90,7 @@ public class WaterPhysics : MonoBehaviour
     {
         Vector3 rayOrigin = point.position + Vector3.up * raycastStartHeight;
 
-        if (!Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, raycastDistance, waterLayer, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, raycastDistance, waterLayer, QueryTriggerInteraction.Collide))
             return;
 
         float heightError = hit.point.y + floatHeight - point.position.y;
