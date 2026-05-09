@@ -464,13 +464,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 0.19, y: 3.38, z: 6.7}
+  m_LocalRotation: {x: 0, y: 0.9659258, z: -0.2588191, w: 0}
+  m_LocalPosition: {x: 0, y: 10.39, z: 23.73}
   m_LocalScale: {x: 1, y: 9.877295, z: 0.91122717}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 30, y: 180, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -898,6 +898,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41f82ac79622246fc90beea06f35fe5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  waveMoving: 0
+  waveTravelSpeed: 5
   resolution: 50
   size: 20
   waveHeight: 3
@@ -994,7 +996,7 @@ Transform:
   m_GameObject: {fileID: 1259361253}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalPosition: {x: -0, y: -0.1, z: -94.5}
   m_LocalScale: {x: 1, y: 1, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1110,7 +1112,8 @@ Transform:
   m_LocalPosition: {x: 0, y: -10, z: 0}
   m_LocalScale: {x: 15, y: 15, z: 15}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1407838224}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1407838220
@@ -1224,8 +1227,8 @@ Transform:
   m_GameObject: {fileID: 1407838220}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.74804026, z: -0, w: 0.6636534}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3, y: 0.03, z: 1}
+  m_LocalPosition: {x: 0.107333325, y: 0.72, z: 0.8953333}
+  m_LocalScale: {x: 0.19999999, y: 0.0019999999, z: 0.06666666}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1814268451}
@@ -1235,7 +1238,7 @@ Transform:
   - {fileID: 288994749}
   - {fileID: 962911135}
   - {fileID: 2010654403}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1379296432}
   m_LocalEulerAnglesHint: {x: 0, y: 96.842, z: 0}
 --- !u!114 &1407838225
 MonoBehaviour:
@@ -1299,14 +1302,15 @@ MonoBehaviour:
   - {fileID: 2010654403}
   - {fileID: 962911135}
   buoyancyStrength: 15
-  floatHeight: 5
-  verticalDamp: 0.18
+  floatHeight: 5.3
+  verticalDamping: 2
   finGrip: 0.5
   finGripDeadzone: 0.01
   linearDrag: 0.8
-  angularDragPitch: 6
-  angularDragRoll: 4
+  angularDragPitch: 3
+  angularDragRoll: 2
   angularDragYaw: 0.5
+  maxVelocity: 15
   waterLayer:
     serializedVersion: 2
     m_Bits: 16
@@ -2262,7 +2266,6 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 1379296432}
-  - {fileID: 1407838224}
   - {fileID: 1206339753}
   - {fileID: 330585546}
   - {fileID: 1259361258}
