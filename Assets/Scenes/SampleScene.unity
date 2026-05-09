@@ -485,7 +485,7 @@ Transform:
   m_GameObject: {fileID: 288994748}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.52000016, y: 166.66669, z: 0}
+  m_LocalPosition: {x: -0.43333334, y: 166.6667, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -989,7 +989,7 @@ Transform:
   m_GameObject: {fileID: 623352600}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.52000016, y: 166.66669, z: 0}
+  m_LocalPosition: {x: 0.43333334, y: 166.6667, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1100,11 +1100,11 @@ Transform:
   m_GameObject: {fileID: 962911134}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0.3}
-  m_LocalScale: {x: 3, y: 0.029999997, z: 1}
+  m_LocalPosition: {x: 0, y: 166.6667, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1407838224}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1206339749
 GameObject:
@@ -1216,7 +1216,8 @@ Transform:
   m_LocalPosition: {x: 0, y: -0.3, z: -0.6}
   m_LocalScale: {x: 15, y: 15, z: 15}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1379296432}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1210915043
@@ -1373,9 +1374,9 @@ MonoBehaviour:
   waveCenterLocalX: 0
   noiseScale: 0.3
   noiseStrength: 0.4
-  moveWave: 0
+  moveWave: 1
   moveDirection: {x: 1, y: 0, z: 0}
-  moveSpeed: 2.5
+  moveSpeed: 4
   startX: -75
   resetX: 75
   makeColliderTrigger: 1
@@ -1579,12 +1580,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1379296428}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -10, z: 0}
-  m_LocalScale: {x: 15, y: 15, z: 15}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.6466666, z: 0.04}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1206339753}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1400085190
 GameObject:
@@ -1643,7 +1644,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.6883546, z: 0, w: 0.72537434}
   m_LocalPosition: {x: -0.33333334, y: 0.66666615, z: 0}
-  m_LocalScale: {x: 1.6, y: 33.33334, z: 0.34891528}
+  m_LocalScale: {x: 2, y: 33.33334, z: 0.34891528}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1844525248}
@@ -1763,18 +1764,20 @@ Transform:
   m_GameObject: {fileID: 1407838220}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: -53.08, y: 1, z: 0}
   m_LocalScale: {x: 3, y: 0.029999997, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1814268451}
   - {fileID: 231836721}
   - {fileID: 39253119}
-  - {fileID: 623352601}
-  - {fileID: 288994749}
   - {fileID: 330585546}
   - {fileID: 1401637574}
   - {fileID: 1467483086}
+  - {fileID: 623352601}
+  - {fileID: 288994749}
+  - {fileID: 2010654403}
+  - {fileID: 962911135}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1407838225
@@ -1784,13 +1787,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1407838220}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e54e352a2451f45ae965daac7267c6c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SurfboardController
   rb: {fileID: 1407838226}
-  forwardForce: 20
+  forwardForce: 10
   pitchTorque: 4
   rollTorque: 3
 --- !u!54 &1407838226
@@ -1838,8 +1841,8 @@ MonoBehaviour:
   - {fileID: 288994749}
   - {fileID: 2010654403}
   - {fileID: 962911135}
-  buoyancyStrength: 400
-  floatHeight: 5.4
+  buoyancyStrength: 500
+  floatHeight: 7
   normalLiftInfluence: 0.25
   verticalDamping: 50
   finGrip: 0.5
@@ -1879,7 +1882,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaveRideFeasibilityTester
   rb: {fileID: 1407838226}
   forwardForce: 3
-  targetSpeed: 8
+  targetSpeed: 3
   uprightTorque: 10
   angularDamping: 2
   speedWithWave: 3
@@ -1903,7 +1906,10 @@ MonoBehaviour:
   - {fileID: 1467483086}
   - {fileID: 1400085191}
   massSurfer: 15
-  testCase: 0
+  useVirtualToeHeelWidth: 1
+  virtualToeHeelHalfWidth: 2
+  invertToeHeelSide: 0
+  testCase: 1
   alternatingPeriod: 1
   leftRightFootShift: 0
   toeHeelShift: 0
@@ -1913,6 +1919,7 @@ MonoBehaviour:
   leftHeelWeight: 0
   rightToeWeight: 0
   rightHeelWeight: 0
+  estimatedRollTorque: 0
 --- !u!1 &1453189108
 GameObject:
   m_ObjectHideFlags: 0
@@ -1970,7 +1977,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.6427876, z: 0, w: 0.7660445}
   m_LocalPosition: {x: 0.05, y: 0.66666615, z: -0.036}
-  m_LocalScale: {x: 1.6, y: 33.33334, z: 0.36454505}
+  m_LocalScale: {x: 2, y: 33.33334, z: 0.36454505}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1210915044}
@@ -2961,11 +2968,11 @@ Transform:
   m_GameObject: {fileID: 2010654402}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -0.3}
-  m_LocalScale: {x: 3, y: 0.029999997, z: 1}
+  m_LocalPosition: {x: 0, y: 166.6667, z: -0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1407838224}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -2973,9 +2980,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 410087041}
   - {fileID: 832575519}
-  - {fileID: 1379296432}
   - {fileID: 1206339753}
   - {fileID: 1259361258}
   - {fileID: 1407838224}
-  - {fileID: 962911135}
-  - {fileID: 2010654403}

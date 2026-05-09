@@ -26,6 +26,11 @@ public class SurferManuverTest : MonoBehaviour
 
     public float massSurfer = 5f;
 
+    [Header("Virtual Pressure Shape")]
+    public bool useVirtualToeHeelWidth = true;
+    public float virtualToeHeelHalfWidth = 0.45f;
+    public bool invertToeHeelSide = true;
+
     [Header("Test")]
     public TestCase testCase = TestCase.Manual;
     public float alternatingPeriod = 1f;
@@ -41,6 +46,7 @@ public class SurferManuverTest : MonoBehaviour
     public float leftHeelWeight;
     public float rightToeWeight;
     public float rightHeelWeight;
+    public float estimatedRollTorque;
 
     float targetLeftRightFootShift;
     float targetToeHeelShift;
@@ -156,6 +162,7 @@ public class SurferManuverTest : MonoBehaviour
         rightHeelWeight = totalWeight * rightFootRatio * heelRatio;
 
         totalAppliedForce = leftToeWeight + leftHeelWeight + rightToeWeight + rightHeelWeight;
+        estimatedRollTorque = 0f;
 
         AddFootForce(0, leftToeWeight);
         AddFootForce(1, leftHeelWeight);
@@ -169,6 +176,66 @@ public class SurferManuverTest : MonoBehaviour
         if (foot == null)
             return;
 
-        rb.AddForceAtPosition(Vector3.down * force, foot.position, ForceMode.Force);
+        Vector3 forcePosition = GetForcePosition(index, foot);
+        Vector3 forceVector = Vector3.down * force;
+
+        rb.AddForceAtPosition(forceVector, forcePosition, ForceMode.Force);
+
+        Vector3 r = forcePosition - rb.worldCenterOfMass;
+        Vector3 torque = Vector3.Cross(r, forceVector);
+        Vector3 localTorque = transform.InverseTransformDirection(torque);
+
+        estimatedRollTorque += localTorque.x;
+    }
+
+    Vector3 GetForcePosition(int index, Transform foot)
+    {
+        if (!useVirtualToeHeelWidth)
+            return foot.position;
+
+        Vector3 localPos = transform.InverseTransformPoint(foot.position);
+        Vector3 localCenter = transform.InverseTransformPoint(rb.worldCenterOfMass);
+
+        bool isToe = index == 0 || index == 2;
+
+        float toeSign = invertToeHeelSide ? 1f : -1f;
+        float heelSign = -toeSign;
+
+        localPos.z = localCenter.z + (isToe ? toeSign : heelSign) * virtualToeHeelHalfWidth;
+
+        return transform.TransformPoint(localPos);
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (feetPoints == null || feetPoints.Length < 4)
+            return;
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (feetPoints[i] == null)
+                continue;
+
+            Gizmos.color = (i == 0 || i == 2) ? Color.cyan : Color.magenta;
+            Gizmos.DrawSphere(GetEditorForcePosition(i, feetPoints[i]), 0.08f);
+        }
+    }
+
+    Vector3 GetEditorForcePosition(int index, Transform foot)
+    {
+        if (!useVirtualToeHeelWidth || rb == null)
+            return foot.position;
+
+        Vector3 localPos = transform.InverseTransformPoint(foot.position);
+        Vector3 localCenter = transform.InverseTransformPoint(rb.worldCenterOfMass);
+
+        bool isToe = index == 0 || index == 2;
+
+        float toeSign = invertToeHeelSide ? 1f : -1f;
+        float heelSign = -toeSign;
+
+        localPos.z = localCenter.z + (isToe ? toeSign : heelSign) * virtualToeHeelHalfWidth;
+
+        return transform.TransformPoint(localPos);
     }
 }

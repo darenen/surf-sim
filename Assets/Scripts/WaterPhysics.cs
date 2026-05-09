@@ -5,36 +5,44 @@ public class WaterPhysics : MonoBehaviour
     public Rigidbody rb;
     public Transform[] floatPoints;
 
+
+
     [Header("Buoyancy")]
-    public float buoyancyStrength = 15f;
+    public float buoyancyStrength = 80f;
     public float floatHeight = 1.65f;
-    [Range(0f, 1f)] public float normalLiftInfluence = 0.25f;
+    public float verticalDamping = 8f;
 
-    [Header("Damping")]
-    public float verticalDamping = 5f;
 
-    [Header("Fin Grip")]
-    public float finGrip = 1f;
-    public float finGripDeadzone = 0.01f;
+    [Header("Slope Drive")]
+    public float slopeDriveStrength = 1f;
+    public float maxSlopeDriveAcceleration = 8f;
 
     [Header("Board Drag")]
-    public float forwardDrag = 10f;
-    public float sidewaysDrag = 5f;
-    public float verticalWaterDrag = 0.3f;
+    public float forwardDrag = 0.35f;
+    public float sidewaysDrag = 2.5f;
+    public float verticalWaterDrag = 0.5f;
+
+    [Header("Fin")]
+    public Transform finPoint;
+    public float finGripStrength = 1.5f;
+    public float speedForFullFin = 4f;
+    public float finSlipDeadzone = 0.02f;
+    public float maxFinAcceleration = 4f;
 
     [Header("Rail Bite / Carving")]
-    public float railBiteStrength = 0.8f;
+    public float railBiteStrength = 1.5f;
     public float railCarvePivotOffset = 1.2f;
-    public float speedForFullRailBite = 8f;
+    public float speedForFullRailBite = 6f;
+    public float maxRailCarveAcceleration = 5f;
     public bool invertRailCarve = false;
 
     [Header("Angular Drag")]
-    public float angularDragRoll = 2f;
-    public float angularDragYaw = 0.8f;
+    public float angularDragRoll = 1f;
+    public float angularDragYaw = 0.5f;
     public float angularDragPitch = 3f;
 
     [Header("Safety")]
-    public float maxVelocity = 15f;
+    public float maxVelocity = 18f;
     public float maxAngularVelocity = 12f;
 
     [Header("Raycast")]
@@ -42,9 +50,12 @@ public class WaterPhysics : MonoBehaviour
     public float raycastStartHeight = 5f;
     public float raycastDistance = 20f;
 
+    [Header("Debug")]
+    [HideInInspector] public int pointsInWater;
     [HideInInspector] public float currentSpeed;
     [HideInInspector] public float sidewaysSlip;
-    [HideInInspector] public int pointsInWater;
+    [HideInInspector] public float slopeDriveAcceleration;
+    [HideInInspector] public float finSlip;
     [HideInInspector] public float railAmount;
 
     void Reset()
@@ -58,35 +69,43 @@ public class WaterPhysics : MonoBehaviour
             return;
 
         pointsInWater = 0;
+        slopeDriveAcceleration = 0f;
+        finSlip = 0f;
 
         float totalSubmergence = 0f;
-        Vector3 normalSum = Vector3.zero;
+        Vector3 weightedWaterNormal = Vector3.zero;
 
         foreach (Transform point in floatPoints)
         {
-            if (point == null) continue;
+            if (point == null)
+                continue;
 
-            ApplyFloatPoint(point, ref totalSubmergence, ref normalSum);
+            ApplyFloatPoint(point, ref totalSubmergence, ref weightedWaterNormal);
         }
 
         float immersion = pointsInWater > 0 ? totalSubmergence / pointsInWater : 0f;
+        Vector3 averageWaterNormal = weightedWaterNormal.sqrMagnitude > 0.001f
+            ? weightedWaterNormal.normalized
+            : Vector3.up;
 
         if (pointsInWater > 0)
         {
+            ApplySlopeDrive(averageWaterNormal, immersion);
+            ApplyFinGrip(immersion);
+            ApplyRailBite(immersion);
             ApplyLocalDrag(immersion);
             ApplyAngularDrag(immersion);
-            ApplyRailBite(immersion);
         }
 
         rb.linearVelocity = Vector3.ClampMagnitude(rb.linearVelocity, maxVelocity);
         rb.angularVelocity = Vector3.ClampMagnitude(rb.angularVelocity, maxAngularVelocity);
 
-        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
-        currentSpeed = localVel.x;
-        sidewaysSlip = localVel.z;
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+        currentSpeed = localVelocity.x;
+        sidewaysSlip = localVelocity.z;
     }
 
-    void ApplyFloatPoint(Transform point, ref float totalSubmergence, ref Vector3 normalSum)
+    void ApplyFloatPoint(Transform point, ref float totalSubmergence, ref Vector3 weightedWaterNormal)
     {
         Vector3 rayOrigin = point.position + Vector3.up * raycastStartHeight;
 
@@ -98,97 +117,136 @@ public class WaterPhysics : MonoBehaviour
         if (heightError <= 0f)
             return;
 
-
         float submergence = Mathf.Clamp01(heightError / Mathf.Max(0.001f, floatHeight));
 
         pointsInWater++;
         totalSubmergence += submergence;
 
         Vector3 waterNormal = hit.normal;
+
         if (waterNormal.y < 0.1f)
             waterNormal = Vector3.up;
 
         waterNormal.Normalize();
-        normalSum += waterNormal;
+        weightedWaterNormal += waterNormal * submergence;
 
-        Vector3 pointVel = rb.GetPointVelocity(point.position);
+        Vector3 pointVelocity = rb.GetPointVelocity(point.position);
+        float verticalSpeed = Vector3.Dot(pointVelocity, Vector3.up);
 
+        Vector3 buoyancy = Vector3.up * (buoyancyStrength * submergence);
+        Vector3 damping = Vector3.up * (-verticalSpeed * verticalDamping * submergence);
 
-        Vector3 flatWaveDir = Vector3.right;
-        float speedWithWave = Vector3.Dot(rb.linearVelocity, flatWaveDir);
-        float catchFactor = Mathf.Clamp01(speedWithWave / 5f);
-
-        float effectiveNormalLift = normalLiftInfluence * catchFactor;
-
-        Vector3 liftDirection = Vector3.Slerp(Vector3.up, waterNormal, effectiveNormalLift).normalized;
-
-
-        Vector3 buoyancy = liftDirection * (buoyancyStrength * submergence);
-
-        Vector3 verticalDamp = Vector3.up * (-pointVel.y * verticalDamping * submergence);
-
-        Vector3 localPointVel = transform.InverseTransformDirection(pointVel);
-        float slip = localPointVel.z;
-
-        Vector3 finForce = Vector3.zero;
-
-        if (Mathf.Abs(slip) > finGripDeadzone)
-        {
-            Vector3 sideDir = FlatSideDirection();
-            finForce = sideDir * (-slip * finGrip * rb.mass * submergence);
-        }
-
-        rb.AddForceAtPosition(buoyancy + verticalDamp + finForce, point.position, ForceMode.Force);
+        rb.AddForceAtPosition(buoyancy + damping, point.position, ForceMode.Force);
     }
 
-    void ApplyLocalDrag(float immersion)
+
+
+    void ApplySlopeDrive(Vector3 waterNormal, float immersion)
     {
-        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+        Vector3 nose = FlatNoseDirection();
 
-        localVel.x = Damp(localVel.x, forwardDrag * immersion);
-        localVel.y = Damp(localVel.y, verticalWaterDrag * immersion);
-        localVel.z = Damp(localVel.z, sidewaysDrag * immersion);
+        if (nose == Vector3.zero)
+            return;
 
-        rb.linearVelocity = transform.TransformDirection(localVel);
+        Vector3 gravityDownSlope = Vector3.ProjectOnPlane(Physics.gravity, waterNormal);
+
+        if (gravityDownSlope.sqrMagnitude < 0.001f)
+            return;
+
+        float driveAlongNose = Vector3.Dot(gravityDownSlope, nose);
+
+        if (driveAlongNose <= 0f)
+            return;
+
+        slopeDriveAcceleration = driveAlongNose * slopeDriveStrength * immersion;
+        slopeDriveAcceleration = Mathf.Clamp(slopeDriveAcceleration, 0f, maxSlopeDriveAcceleration);
+
+        rb.AddForce(nose * slopeDriveAcceleration, ForceMode.Acceleration);
     }
 
-    void ApplyAngularDrag(float immersion)
+    void ApplyFinGrip(float immersion)
     {
-        Vector3 localAngVel = transform.InverseTransformDirection(rb.angularVelocity);
+        if (finPoint == null || immersion <= 0f)
+            return;
 
-        localAngVel.x = Damp(localAngVel.x, angularDragRoll * immersion);
-        localAngVel.y = Damp(localAngVel.y, angularDragYaw * immersion);
-        localAngVel.z = Damp(localAngVel.z, angularDragPitch * immersion);
+        Vector3 localFinVelocity = transform.InverseTransformDirection(rb.GetPointVelocity(finPoint.position));
 
-        rb.angularVelocity = transform.TransformDirection(localAngVel);
+        float forwardSpeed = Mathf.Abs(localFinVelocity.x);
+        float speedFactor = Mathf.Clamp01(forwardSpeed / Mathf.Max(0.001f, speedForFullFin));
+
+        if (speedFactor <= 0.01f)
+            return;
+
+        finSlip = localFinVelocity.z;
+
+        if (Mathf.Abs(finSlip) < finSlipDeadzone)
+            return;
+
+        float finAcceleration = -finSlip * finGripStrength * speedFactor * immersion;
+        finAcceleration = Mathf.Clamp(finAcceleration, -maxFinAcceleration, maxFinAcceleration);
+
+        rb.AddForceAtPosition(FlatSideDirection() * finAcceleration, finPoint.position, ForceMode.Acceleration);
     }
 
     void ApplyRailBite(float immersion)
     {
-        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
 
-        float forwardSpeed = localVel.x;
-        float speed01 = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / Mathf.Max(0.001f, speedForFullRailBite));
+        float forwardSpeed = localVelocity.x;
+        float speedFactor = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / Mathf.Max(0.001f, speedForFullRailBite));
 
         railAmount = Mathf.Clamp(transform.forward.y, -1f, 1f);
 
-        if (Mathf.Abs(railAmount) < 0.02f || speed01 <= 0.01f)
+        if (Mathf.Abs(railAmount) < 0.02f || speedFactor <= 0.01f)
             return;
 
         float direction = invertRailCarve ? -1f : 1f;
-        float signedSpeedPower = forwardSpeed * Mathf.Abs(forwardSpeed);
+        float speedSign = Mathf.Sign(forwardSpeed);
 
-        Vector3 sideDir = FlatSideDirection();
-        Vector3 carveForce = sideDir * (railAmount * signedSpeedPower * railBiteStrength * speed01 * immersion * direction);
+        float carveAcceleration = railAmount * railBiteStrength * speedFactor * speedSign * immersion * direction;
+        carveAcceleration = Mathf.Clamp(carveAcceleration, -maxRailCarveAcceleration, maxRailCarveAcceleration);
 
         Vector3 forcePoint = rb.worldCenterOfMass - transform.right * railCarvePivotOffset;
 
-        rb.AddForceAtPosition(carveForce, forcePoint, ForceMode.Acceleration);
+        rb.AddForceAtPosition(FlatSideDirection() * carveAcceleration, forcePoint, ForceMode.Acceleration);
+    }
+
+    void ApplyLocalDrag(float immersion)
+    {
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+
+        localVelocity.x = Damp(localVelocity.x, forwardDrag * immersion);
+        localVelocity.y = Damp(localVelocity.y, verticalWaterDrag * immersion);
+        localVelocity.z = Damp(localVelocity.z, sidewaysDrag * immersion);
+
+        rb.linearVelocity = transform.TransformDirection(localVelocity);
+    }
+
+    void ApplyAngularDrag(float immersion)
+    {
+        Vector3 localAngularVelocity = transform.InverseTransformDirection(rb.angularVelocity);
+
+        localAngularVelocity.x = Damp(localAngularVelocity.x, angularDragRoll * immersion);
+        localAngularVelocity.y = Damp(localAngularVelocity.y, angularDragYaw * immersion);
+        localAngularVelocity.z = Damp(localAngularVelocity.z, angularDragPitch * immersion);
+
+        rb.angularVelocity = transform.TransformDirection(localAngularVelocity);
     }
 
     float Damp(float value, float drag)
     {
         return value * Mathf.Exp(-drag * Time.fixedDeltaTime);
+    }
+
+    Vector3 FlatNoseDirection()
+    {
+        Vector3 nose = transform.right;
+        nose.y = 0f;
+
+        if (nose.sqrMagnitude < 0.001f)
+            return Vector3.zero;
+
+        return nose.normalized;
     }
 
     Vector3 FlatSideDirection()
@@ -197,8 +255,9 @@ public class WaterPhysics : MonoBehaviour
         side.y = 0f;
 
         if (side.sqrMagnitude < 0.001f)
-            side = transform.forward;
+            return Vector3.zero;
 
         return side.normalized;
     }
+
 }
