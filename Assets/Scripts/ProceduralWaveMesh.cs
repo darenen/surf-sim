@@ -3,18 +3,23 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
 public class ProceduralWaveMesh : MonoBehaviour
 {
+    [Header("Wave Moving")]
+    public bool waveMoving = false;
+    public float waveTravelSpeed = 5f;
+
     [Header("Grid Dimensions")]
     public int resolution = 50; // High density for the AI to "feel" the slope
     public float size = 20f;     // Total size of the water patch
 
-    [Header("Wave Shape (The Swell)")]
-    public float waveHeight = 1.5f;
-    public float waveFrequency = 0.5f;
-    public float waveSpeed = 2.0f;
+    [Header("Single Wave Shape")]
+    public float waveHeight = 3f;
+    public float waveWidth = 0.15f; // Lower number = fatter wave. Higher number = steeper/narrower.
+    public float wavePosition = 0f; // Moves the wave left or right on the X-axis
 
     [Header("Randomization (The Chop)")]
     public float noiseScale = 0.3f;
     public float noiseStrength = 0.4f;
+    public float waterFlowSpeed = 2f; // How fast the water rushes over the wave
 
     private Mesh mesh;
     private MeshCollider meshCollider;
@@ -93,13 +98,27 @@ public class ProceduralWaveMesh : MonoBehaviour
         {
             Vector3 v = baseVertices[i];
 
-            // 1. Math for the rhythmic swell (Sine Wave)
-            float swell = Mathf.Sin(v.x * waveFrequency + Time.time * waveSpeed) * waveHeight;
+            // 1. The Single Wave (Gaussian Bell Curve)
+            // We calculate how far this point is from the center of the wave
+            float distance = v.x - wavePosition;
 
-            // 2. Math for the random bumps (Perlin Noise)
-            // We use Time.time to make the noise "crawl" across the surface
-            float chop = Mathf.PerlinNoise(v.x * noiseScale + (Time.time * 0.5f),
-                                           v.z * noiseScale + (Time.time * 0.5f)) * noiseStrength;
+            if (waveMoving)
+            {
+                // Calculate a moving position that loops from one edge of the mesh to the other
+                float currentPosition = Mathf.Repeat(Time.time * waveTravelSpeed, size) - (size / 2f);
+
+                // Calculate distance based on this moving position
+                distance = v.x - currentPosition;
+            }
+
+            // This math creates one single peak that flattens out on the sides
+            float swell = waveHeight * Mathf.Exp(-Mathf.Pow(distance, 2) * waveWidth);
+
+            // 2. The Flowing Water (Perlin Noise)
+            // We animate the noise using Time.time so the water looks like it's
+            // rushing up and over the stationary wave.
+            float chop = Mathf.PerlinNoise(v.x * noiseScale + (Time.time * waterFlowSpeed),
+                                           v.z * noiseScale) * noiseStrength;
 
             // 3. Set the new height
             workingVertices[i] = new Vector3(v.x, swell + chop, v.z);
@@ -108,9 +127,13 @@ public class ProceduralWaveMesh : MonoBehaviour
         // Push the new point positions to the mesh
         mesh.vertices = workingVertices;
 
-        // This is the most important part for Raycasting:
-        // We have to "kick" the collider to notice the change.
+        // NEW: Tell the mesh to recalculate which way the slopes are facing!
+        mesh.RecalculateNormals();
+
+        // Kick the collider to update the physics
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = mesh;
     }
+
+
 }
