@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
+
 
 public class WaterPhysics : MonoBehaviour
 {
@@ -16,6 +18,10 @@ public class WaterPhysics : MonoBehaviour
     public float rollDrag = 30f;
     public float tiltDragMultiplier = 2f;
 
+    [Header("Carving")]
+    public float carveTurnSpeed = 5f; // How hard the board turns when leaning
+    [Header("Fin Dynamics")]
+    public float finGrip = 50f; // How hard the fin resists sideways drifting
 
     // buoyancy is proportional to volume
     // each point represents different volumes of the board
@@ -43,6 +49,8 @@ public class WaterPhysics : MonoBehaviour
         }
         averageDepth /= 4;
         applyAngularDrag(averageDepth);
+        applyFinDynamics();
+        applyCarvingDynamics();
     }
 
     // Applies bouyant force to a singular point
@@ -100,18 +108,67 @@ public class WaterPhysics : MonoBehaviour
         float pitchAngleMod = 1f + (pitchTilt * tiltDragMultiplier);
 
         // calculate the torque
-        float torqueX = -localAngVel.x * pitchDrag * averageDepth * speedStability * pitchAngleMod;
-        float torqueZ = -localAngVel.z * rollDrag * averageDepth * speedStability * rollAngleMod;
+        float torqueX = -localAngVel.x * rollDrag * averageDepth * speedStability * pitchAngleMod;
+        float torqueZ = -localAngVel.z * pitchDrag * averageDepth * speedStability * rollAngleMod;
 
         // apply the force
         Vector3 dampingTorque = new Vector3(torqueX, 0f, torqueZ);
         rb.AddRelativeTorque(dampingTorque, ForceMode.Force);
 
     }
-    void applyFinDynamics()
+    void applyCarvingDynamics()
     {
-        return;
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+        float forwardSpeed = localVelocity.x;
+
+        // if still
+        if (forwardSpeed < 0.5f) return;
+
+
+        float leanAmount = transform.up.z;
+        float turnTorque = -leanAmount * forwardSpeed * carveTurnSpeed;
+
+        rb.AddRelativeTorque(new Vector3(0f,turnTorque, 0f), ForceMode.Force);
+
     }
 
+    void applyFinDynamics()
+    {
+        if (finPoint == null) return;
+
+        Vector3 pointVelocity = rb.GetPointVelocity(finPoint.position);
+        Vector3 localFinVel = transform.InverseTransformDirection(pointVelocity);
+
+        if (pointVelocity.sqrMagnitude < 1f) return;
+
+        // only care about z axis bc thats normal to the nose
+        float sidewaysSlip = localFinVel.z;
+
+        sidewaysSlip = Mathf.Clamp(sidewaysSlip, -5f, 5f);
+
+        // counter force
+        Vector3 counterForce = -transform.forward * (sidewaysSlip * finGrip);
+
+        // apply force
+        rb.AddForceAtPosition(counterForce, finPoint.position);
+    }
+
+    void Update()
+    {
+        // Safety check to make sure a keyboard is actually connected
+        if (Keyboard.current == null) return;
+
+        // TESTING ROLL DRAG (Press '1')
+        if (Keyboard.current.digit1Key.wasPressedThisFrame)
+        {
+            rb.AddRelativeTorque(new Vector3(5f, 0f, 0f), ForceMode.Impulse);
+        }
+
+        // TESTING PITCH DRAG (Press '2')
+        if (Keyboard.current.digit2Key.wasPressedThisFrame)
+        {
+            rb.AddRelativeTorque(new Vector3(0f, 0f, 5f), ForceMode.Impulse);
+        }
+    }
 
 }
