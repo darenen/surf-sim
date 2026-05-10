@@ -1172,7 +1172,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1fc6aff8b136d481d8e1e42445014481, type: 2}
+  - {fileID: 2100000, guid: 36c804952ee4847e4af22f6d78b46e66, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1369,14 +1369,14 @@ MonoBehaviour:
   resolutionZ: 50
   length: 20
   width: 24
-  waveHeight: 3
+  waveHeight: 4
   waveWidth: 0.1
   waveCenterLocalX: 0
   noiseScale: 0.3
   noiseStrength: 0.4
   moveWave: 1
   moveDirection: {x: 1, y: 0, z: 0}
-  moveSpeed: 4
+  moveSpeed: 2
   startX: -75
   resetX: 75
   makeColliderTrigger: 1
@@ -1764,7 +1764,7 @@ Transform:
   m_GameObject: {fileID: 1407838220}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -53.08, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 3, y: 0.029999997, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1778,6 +1778,7 @@ Transform:
   - {fileID: 288994749}
   - {fileID: 2010654403}
   - {fileID: 962911135}
+  - {fileID: 1611002779}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1407838225
@@ -1787,7 +1788,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1407838220}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e54e352a2451f45ae965daac7267c6c4, type: 3}
   m_Name: 
@@ -1842,17 +1843,22 @@ MonoBehaviour:
   - {fileID: 2010654403}
   - {fileID: 962911135}
   buoyancyStrength: 500
-  floatHeight: 7
-  normalLiftInfluence: 0.25
+  floatHeight: 5.6
   verticalDamping: 50
-  finGrip: 0.5
-  finGripDeadzone: 0.01
-  forwardDrag: 20
-  sidewaysDrag: 5
+  slopeDriveStrength: 1
+  maxSlopeDriveAcceleration: 8
+  forwardDrag: 0.3
+  sidewaysDrag: 6
   verticalWaterDrag: 0.3
+  finPoint: {fileID: 0}
+  finGripStrength: 3
+  speedForFullFin: 5
+  finSlipDeadzone: 0.02
+  maxFinAcceleration: 6
   railBiteStrength: 0.45
   railCarvePivotOffset: 1.2
   speedForFullRailBite: 8
+  maxRailCarveAcceleration: 6
   invertRailCarve: 0
   angularDragRoll: 0.5
   angularDragYaw: 0.5
@@ -1864,9 +1870,11 @@ MonoBehaviour:
     m_Bits: 16
   raycastStartHeight: 5
   raycastDistance: 20
+  pointsInWater: 0
   currentSpeed: 0
   sidewaysSlip: 0
-  pointsInWater: 0
+  slopeDriveAcceleration: 0
+  finSlip: 0
   railAmount: 0
 --- !u!114 &1407838228
 MonoBehaviour:
@@ -1984,6 +1992,37 @@ Transform:
   - {fileID: 275410804}
   m_Father: {fileID: 1407838224}
   m_LocalEulerAnglesHint: {x: 0, y: -80, z: 0}
+--- !u!1 &1611002778
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1611002779}
+  m_Layer: 0
+  m_Name: FinPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1611002779
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611002778}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.36666667, y: -6.6666675, z: 0}
+  m_LocalScale: {x: 0.33333334, y: 33.33334, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1407838224}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1740337567
 GameObject:
   m_ObjectHideFlags: 0
