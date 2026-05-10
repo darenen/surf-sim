@@ -17,6 +17,8 @@ public class WaterPhysics : MonoBehaviour
     public float pitchDrag = 10f;
     public float rollDrag = 30f;
     public float tiltDragMultiplier = 2f;
+    public float forwardDrag = 1f;
+    public float sidewaysDrag = 0f;
 
     [Header("Carving")]
     public float carveTurnSpeed = 5f; // How hard the board turns when leaning
@@ -45,11 +47,12 @@ public class WaterPhysics : MonoBehaviour
             Transform point = floatPoints[i];
             float buoyancy = buoyancyMultiplier[i];
 
-            averageDepth += applyBuoyancy(point, buoyancy);
+            float depth = applyBuoyancy(point, buoyancy);
+            averageDepth += depth;
         }
         averageDepth /= 4;
         applyAngularDrag(averageDepth);
-        applyFinDynamics();
+        applyFinDynamics(averageDepth);
         applyCarvingDynamics();
     }
 
@@ -75,13 +78,29 @@ public class WaterPhysics : MonoBehaviour
         float depthMultiplier = Mathf.Clamp(heightError, 0f, 1f);
         // buoyancy force and vertical damping
         Vector3 F_b = buoyancyForce *  hit.normal * (multiplier * depthMultiplier);
-
         Vector3 pointVelocity = rb.GetPointVelocity(point.position);
-        Vector3 F_d = -Vector3.up * (pointVelocity.y * verticalDamp * depthMultiplier);
 
 
+        float clampedVelY = Mathf.Clamp(pointVelocity.y, -10f, 10f);
+        Vector3 F_d = -Vector3.up * (clampedVelY * verticalDamp * depthMultiplier);
 
-        rb.AddForceAtPosition(F_b + F_d, point.position);
+        // Linear Drag
+        Vector3 localPointVel = transform.InverseTransformDirection(pointVelocity);
+
+        float clampedVelX = Mathf.Clamp(localPointVel.x, -40f, 40f);
+        float clampedVelZ = Mathf.Clamp(localPointVel.z, -40f, 40f);
+
+        if (Mathf.Abs(localPointVel.x) > 40f)
+            Debug.LogWarning($"[LINEAR DRAG] {point.name} X-Vel going nuclear! Raw: {localPointVel.x}. Clamping to 40.");
+        if (Mathf.Abs(localPointVel.z) > 40f)
+            Debug.LogWarning($"[LINEAR DRAG] {point.name} Z-Vel going nuclear! Raw: {localPointVel.z}. Clamping to 40.");
+
+        float dragX = -clampedVelX * forwardDrag * (depthMultiplier * multiplier);
+        float dragZ = -clampedVelZ * sidewaysDrag * (depthMultiplier * multiplier);
+        Vector3 F_directionalDrag = transform.TransformDirection(new Vector3(dragX, 0f, dragZ));
+
+
+        rb.AddForceAtPosition(F_b + F_d + F_directionalDrag, point.position);
 
         return depthMultiplier;
     }
@@ -93,25 +112,33 @@ public class WaterPhysics : MonoBehaviour
     {
        if (averageDepth <= 0f) return; // assuming this down is positive
 
-        // gets the relative spin
         Vector3 localAngVel = transform.InverseTransformDirection(rb.angularVelocity);
-
-        // get forward speed to increase stablity at high speeds
         Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
-        float speedStability = 1f + (Mathf.Abs(localVelocity.z) * 0.1f);
 
-        // calculates how heavily the board is angled
-        float rollTilt = Mathf.Abs(transform.right.y);  // 0 = flat, 1 = 90 degrees
+
+        float clampedForwardSpeed = Mathf.Clamp(Mathf.Abs(localVelocity.x), 0f, 40f);
+        float speedStability = 1f + (clampedForwardSpeed * 0.1f);
+        // calculates the roll and pitch angles
+        float rollTilt = Mathf.Abs(transform.right.y);
         float pitchTilt = Mathf.Abs(transform.forward.y);
 
         float rollAngleMod = 1f + (rollTilt * tiltDragMultiplier);
         float pitchAngleMod = 1f + (pitchTilt * tiltDragMultiplier);
 
-        // calculate the torque
-        float torqueX = -localAngVel.x * rollDrag * averageDepth * speedStability * pitchAngleMod;
-        float torqueZ = -localAngVel.z * pitchDrag * averageDepth * speedStability * rollAngleMod;
+        if (Mathf.Abs(localAngVel.x) > 15f || Mathf.Abs(localAngVel.z) > 15f)
+            Debug.LogWarning($"[ANGULAR] Spin speed nuclear! X: {localAngVel.x}, Z: {localAngVel.z}");
 
-        // apply the force
+        // clamp
+        float clampedAngVelX = Mathf.Clamp(localAngVel.x, -15f, 15f);
+        float clampedAngVelZ = Mathf.Clamp(localAngVel.z, -15f, 15f);
+
+        float torqueX = -clampedAngVelX * rollDrag * averageDepth * speedStability * pitchAngleMod;
+        float torqueZ = -clampedAngVelZ * pitchDrag * averageDepth * speedStability * rollAngleMod;
+
+        // clamps
+        torqueX = Mathf.Clamp(torqueX, -20f, 20f);
+        torqueZ = Mathf.Clamp(torqueZ, -20f, 20f);
+
         Vector3 dampingTorque = new Vector3(torqueX, 0f, torqueZ);
         rb.AddRelativeTorque(dampingTorque, ForceMode.Force);
 
@@ -125,16 +152,20 @@ public class WaterPhysics : MonoBehaviour
         if (forwardSpeed < 0.5f) return;
 
 
+        float clampedSpeed = Mathf.Clamp(forwardSpeed, 0f, 30f);
         float leanAmount = transform.up.z;
-        float turnTorque = -leanAmount * forwardSpeed * carveTurnSpeed;
+
+        float turnTorque = -leanAmount * clampedSpeed * carveTurnSpeed;
+        turnTorque = Mathf.Clamp(turnTorque, -300f, 300f);
 
         rb.AddRelativeTorque(new Vector3(0f,turnTorque, 0f), ForceMode.Force);
 
     }
 
-    void applyFinDynamics()
+    void applyFinDynamics(float averageDepth)
     {
         if (finPoint == null) return;
+        if (averageDepth <= 0f) return; // assuming this down is positive
 
         Vector3 pointVelocity = rb.GetPointVelocity(finPoint.position);
         Vector3 localFinVel = transform.InverseTransformDirection(pointVelocity);
