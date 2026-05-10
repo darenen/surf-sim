@@ -5,7 +5,8 @@ public class FollowCamera : MonoBehaviour
     public Rigidbody target;
 
     [Header("Position")]
-    public Vector3 offset = new Vector3(0f, 4f, -8f);
+    public float distanceBehind = 8f;
+    public float heightAbove = 4f;
     public float followSpeed = 5f;
 
     [Header("Rotation")]
@@ -17,12 +18,28 @@ public class FollowCamera : MonoBehaviour
     {
         if (target == null) return;
 
-        // Desired position behind the rigidbody
-        Vector3 desiredPosition =
-            target.position +
-            Quaternion.Euler(0f, target.rotation.eulerAngles.y, 0f) * offset;
+        // 1. Find the board's true "Nose" direction (X-axis for your setup)
+        Vector3 flatNoseDirection = target.transform.right;
 
-        // Smooth camera movement
+        // Flatten the Y value so the camera doesn't plunge underwater when you carve!
+        flatNoseDirection.y = 0f;
+
+        // Normalize ensures the distance stays exact even if the board is tilted
+        if (flatNoseDirection != Vector3.zero)
+        {
+            flatNoseDirection.Normalize();
+        }
+        else
+        {
+            flatNoseDirection = Vector3.right; // Fallback
+        }
+
+        // 2. Calculate the spot behind the board
+        Vector3 desiredPosition = target.position
+                                  - (flatNoseDirection * distanceBehind)
+                                  + (Vector3.up * heightAbove);
+
+        // 3. Smooth camera movement
         transform.position = Vector3.SmoothDamp(
             transform.position,
             desiredPosition,
@@ -30,7 +47,7 @@ public class FollowCamera : MonoBehaviour
             1f / followSpeed
         );
 
-        // Only gently follow the target's Y rotation
+        // 4. Smoothly rotate to look at the board
         Quaternion desiredRotation = Quaternion.LookRotation(
             target.position - transform.position,
             Vector3.up
