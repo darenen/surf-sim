@@ -6,24 +6,24 @@ public class ProceduralWaveMesh : MonoBehaviour
     [Header("Grid Dimensions")]
     public int resolutionX = 100;
     public int resolutionZ = 50;
-    public float length = 40f;
+    public float length = 20f;
     public float width = 24f;
 
     [Header("Wave Shape")]
-    public float waveHeight = 2.5f;
-    public float waveWidth = 0.12f;
+    public float waveHeight = 4f;
+    public float waveWidth = 0.1f;
     public float waveCenterLocalX = 0f;
 
     [Header("Chop")]
-    public float noiseScale = 0.25f;
-    public float noiseStrength = 0.15f;
+    public float noiseScale = 0.3f;
+    public float noiseStrength = 0.4f;
 
     [Header("Movement")]
     public bool moveWave = true;
     public Vector3 moveDirection = Vector3.right;
-    public float moveSpeed = 1.5f;
-    public float startX = -20f;
-    public float resetX = 20f;
+    public float moveSpeed = 10f;
+    public float startX = -75f;
+    public float resetX = 75f;
 
     [Header("Collider")]
     public bool makeColliderTrigger = true;

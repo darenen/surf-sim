@@ -12,7 +12,7 @@ public class FeetPhysics : MonoBehaviour
     public Transform leftHeel;
 
     [Header("Surfer Weight")]
-    public float weightForce = 150f;
+    public float weightForce = 100f;
 
     [Header("Weight Distributions")]
     // Order: RightToe, RightHeel, LeftToe, LeftHeel
@@ -21,7 +21,7 @@ public class FeetPhysics : MonoBehaviour
     [Header("Effective Contact Width")]
     public bool useEffectiveContactWidth = true;
     public float targetFullRollTorque = 150f;
-    public float maxEffectiveHalfWidth = 0.8f;
+    public float maxEffectiveHalfWidth = 2f;
     public bool invertToeHeelSide = false;
 
     [Header("Debug")]

@@ -10,20 +10,31 @@ public class WaterPhysics : MonoBehaviour
     public LayerMask waterLayer;
 
     [Header("Buoyancy")]
-    public float buoyancyForce;
+    public float buoyancyForce = 75;
 
     [Header("Drag")]
-    public float verticalDamp = 0.5f;
+    public float verticalDamp = 5f;
     public float pitchDrag = 10f;
     public float rollDrag = 30f;
     public float tiltDragMultiplier = 2f;
-    public float forwardDrag = 1f;
-    public float sidewaysDrag = 0f;
+    public float forwardDrag = 5f;
+    public float sidewaysDrag = 5f;
 
     [Header("Carving")]
-    public float carveTurnSpeed = 5f; // How hard the board turns when leaning
+    public float carveTurnSpeed = 20f; // How hard the board turns when leaning
     [Header("Fin Dynamics")]
-    public float finGrip = 50f; // How hard the fin resists sideways drifting
+    public float finGrip = 5f; // How hard the fin resists sideways drifting
+
+    [Header("Speed Debug")]
+    public float worldSpeed;
+    public float forwardSpeed;
+    public float sidewaysSpeed;
+    public float verticalSpeed;
+    public bool logSpeed = false;
+    public float speedLogInterval = 0.5f;
+
+    private float speedLogTimer;
+
 
     // buoyancy is proportional to volume
     // each point represents different volumes of the board
@@ -200,6 +211,32 @@ public class WaterPhysics : MonoBehaviour
         {
             rb.AddRelativeTorque(new Vector3(0f, 0f, 5f), ForceMode.Impulse);
         }
+        UpdateSpeedDebug();
+    }
+
+    void UpdateSpeedDebug()
+    {
+        if (rb == null) return;
+
+        Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+
+        worldSpeed = rb.linearVelocity.magnitude;
+        forwardSpeed = localVelocity.x;
+        sidewaysSpeed = localVelocity.z;
+        verticalSpeed = localVelocity.y;
+
+        if (!logSpeed) return;
+
+        speedLogTimer -= Time.deltaTime;
+
+        if (speedLogTimer > 0f) return;
+
+        speedLogTimer = Mathf.Max(0.05f, speedLogInterval);
+
+        Debug.Log(
+            $"Speed | World: {worldSpeed:F2} | Forward: {forwardSpeed:F2} | " +
+            $"Sideways: {sidewaysSpeed:F2} | Vertical: {verticalSpeed:F2}"
+        );
     }
 
 }
